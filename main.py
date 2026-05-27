@@ -1,65 +1,77 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-import os
 
-image = cv2.imread("images/Minimalist Headphone Stand.jpg")
+# Load image
+image = cv2.imread(
+    r"C:\Users\vaibh\OneDrive\Desktop\DesignSure\images\3d-bedroom-designs.jpg"
+)
+
+# Convert BGR to RGB
 image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-#convert to grayscale 
+# Convert to grayscale
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-#Edge detection 
-edges = cv2.Canny(gray, 50 ,150)
+# Get image dimensions
+height, width = gray.shape
 
-#thresholding
-ret, thresh = cv2.threshold(gray,127,255,cv2.THRESH_BINARY)
+# Split image vertically
+left_half = gray[:, :width // 2]
+right_half = gray[:, width // 2:]
 
-#Find contours
-contours, hierarchy = cv2.findContours(
-    thresh,
-    cv2.RETR_EXTERNAL, 
-    cv2.CHAIN_APPROX_SIMPLE)
+# Flip right half horizontally
+right_half_flipped = cv2.flip(right_half, 1)
 
-#Copy image for drawing 
-contour_image = image_rgb.copy()
+# Resize if dimensions mismatch
+min_width = min(left_half.shape[1], right_half_flipped.shape[1])
 
-#loop through contours
-for contour in contours:
-    area = cv2.contourArea(contour)
+left_half = left_half[:, :min_width]
+right_half_flipped = right_half_flipped[:, :min_width]
 
-    #ignore tiny areas - area filtering concept
-    if area > 500:
-        x,y,w,h = cv2.boundingRect(contour)
-        #bounding box
-        cv2.rectangle(
-            contour_image,
-            (x,y),
-            (x+w,y+h),
-            (0,255,0),
-            2
-        )
+# Calculate absolute difference
+difference = cv2.absdiff(
+    left_half,
+    right_half_flipped
+)
+
+# Symmetry score
+score = 100 - (
+    np.sum(difference) /
+    (difference.shape[0] * difference.shape[1] * 255)
+) * 100
+
+score = round(score, 2)
+
+print(f"Symmetry Score: {score}%")
 
 # Display images
 titles = [
-    "Original",
-    "Threshold",
-    "Room Detection"
+    "Original Image",
+    "Left Half",
+    "Flipped Right Half",
+    f"Difference Map\nSymmetry Score: {score}%"
 ]
 
 images = [
     image_rgb,
-    thresh,
-    contour_image
+    left_half,
+    right_half_flipped,
+    difference
 ]
 
-plt.figure(figsize=(12, 6))
+plt.figure(figsize=(14, 10))
 
-for i in range(3):
-    plt.subplot(1, 3, i + 1)
+for i in range(len(images)):
+
+    plt.subplot(2, 2, i + 1)
+
     plt.imshow(images[i], cmap='gray')
+
     plt.title(titles[i])
+
     plt.axis('off')
 
 plt.tight_layout()
+
 plt.show()
