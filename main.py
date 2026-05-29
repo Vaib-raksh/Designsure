@@ -13,40 +13,111 @@ image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 # Convert to grayscale
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-# Blur image
+# -----------------------------------
+# SYMMETRY ANALYSIS
+# -----------------------------------
+
+height, width = gray.shape
+
+left_half = gray[:, :width // 2]
+right_half = gray[:, width // 2:]
+
+# Flip right side
+right_half_flipped = cv2.flip(right_half, 1)
+
+# Resize for safety
+min_width = min(
+    left_half.shape[1],
+    right_half_flipped.shape[1]
+)
+
+left_half = left_half[:, :min_width]
+right_half_flipped = right_half_flipped[:, :min_width]
+
+# Difference map
+difference = cv2.absdiff(
+    left_half,
+    right_half_flipped
+)
+
+# Symmetry Score
+symmetry_score = 100 - (
+    np.sum(difference) /
+    (
+        difference.shape[0] *
+        difference.shape[1] *
+        255
+    )
+) * 100
+
+symmetry_score = round(symmetry_score, 2)
+
+# -----------------------------------
+# STRUCTURAL DENSITY ANALYSIS
+# -----------------------------------
+
 blur = cv2.GaussianBlur(gray, (5, 5), 0)
 
-# Edge Detection
 edges = cv2.Canny(blur, 50, 150)
 
-# Count edge pixels
 edge_pixels = np.sum(edges > 0)
 
-# Total pixels
 total_pixels = edges.shape[0] * edges.shape[1]
 
-# Density percentage
-density = (edge_pixels / total_pixels) * 100
+density_score = (
+    edge_pixels / total_pixels
+) * 100
 
-density = round(density, 2)
+density_score = round(density_score, 2)
 
-# Risk classification
-if density < 5:
-    risk = "Low Risk / Very Simple Design"
+# -----------------------------------
+# EFFECTIVENESS SCORE
+# -----------------------------------
 
-elif density < 12:
-    risk = "Moderate Risk / Balanced Design"
+# Weighted scoring
+effectiveness_score = (
+    (symmetry_score * 0.7)
+    +
+    ((100 - density_score) * 0.3)
+)
 
-elif density < 20:
-    risk = "High Complexity / Congested Design"
+effectiveness_score = round(effectiveness_score, 2)
+
+# -----------------------------------
+# RISK CLASSIFICATION
+# -----------------------------------
+
+if effectiveness_score >= 85:
+    risk = "Excellent Design"
+
+elif effectiveness_score >= 70:
+    risk = "Good Design"
+
+elif effectiveness_score >= 55:
+    risk = "Moderate Design"
 
 else:
-    risk = "Very High Risk / Overcrowded Structure"
+    risk = "High Risk / Inefficient Design"
 
-print(f"Structural Density: {density}%")
-print(f"Risk Assessment: {risk}")
+# -----------------------------------
+# PRINT RESULTS
+# -----------------------------------
 
-# Heatmap visualization
+print(f"Symmetry Score: {symmetry_score}%")
+
+print(f"Structural Density: {density_score}%")
+
+print(
+    f"Design Effectiveness Score: "
+    f"{effectiveness_score}/100"
+)
+
+print(f"Assessment: {risk}")
+
+# -----------------------------------
+# HEATMAP
+# -----------------------------------
+
 heatmap = cv2.applyColorMap(
     edges,
     cv2.COLORMAP_JET
@@ -57,16 +128,19 @@ heatmap = cv2.cvtColor(
     cv2.COLOR_BGR2RGB
 )
 
-# Display images
+# -----------------------------------
+# DISPLAY RESULTS
+# -----------------------------------
+
 titles = [
-    "Original Image",
-    "Edges",
+    "Original",
+    "Difference Map",
     "Structural Heatmap"
 ]
 
 images = [
     image_rgb,
-    edges,
+    difference,
     heatmap
 ]
 
@@ -83,7 +157,9 @@ for i in range(len(images)):
     plt.axis('off')
 
 plt.suptitle(
-    f"Density: {density}% | {risk}",
+    f"Effectiveness Score: "
+    f"{effectiveness_score}/100\n"
+    f"{risk}",
     fontsize=14
 )
 
