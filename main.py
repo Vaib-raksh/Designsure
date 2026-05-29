@@ -83,6 +83,53 @@ effectiveness_score = (
 
 effectiveness_score = round(effectiveness_score, 2)
 
+recommendations = []
+
+# Symmetry rules
+
+if symmetry_score < 70:
+    recommendations.append(
+        "Improve design symmetry and visual balance."
+    )
+
+elif symmetry_score > 85:
+    recommendations.append(
+        "Strong symmetry detected."
+    )
+
+# Density rules
+
+if density_score > 15:
+    recommendations.append(
+        "Design appears crowded. Consider simplifying the structure."
+    )
+
+elif density_score < 5:
+    recommendations.append(
+        "Design is clean and visually organized."
+    )
+
+else:
+    recommendations.append(
+        "Structural complexity is balanced."
+    )
+
+# Overall score rules
+
+if effectiveness_score < 60:
+    recommendations.append(
+        "High redesign priority recommended."
+    )
+
+elif effectiveness_score < 80:
+    recommendations.append(
+        "Some optimization opportunities exist."
+    )
+
+else:
+    recommendations.append(
+        "Design quality is strong."
+    )
 # -----------------------------------
 # RISK CLASSIFICATION
 # -----------------------------------
@@ -113,7 +160,10 @@ print(
 )
 
 print(f"Assessment: {risk}")
+print("\nRecommendations:")
 
+for recommendation in recommendations:
+    print(f"- {recommendation}")
 # -----------------------------------
 # HEATMAP
 # -----------------------------------
