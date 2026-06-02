@@ -7,194 +7,164 @@ image = cv2.imread(
     r"C:\Users\vaibh\OneDrive\Desktop\DesignSure\images\3d-bedroom-designs.jpg"
 )
 
-# Convert BGR to RGB
 image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
 # Convert to grayscale
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-# -----------------------------------
-# SYMMETRY ANALYSIS
-# -----------------------------------
-
-height, width = gray.shape
-
-left_half = gray[:, :width // 2]
-right_half = gray[:, width // 2:]
-
-# Flip right side
-right_half_flipped = cv2.flip(right_half, 1)
-
-# Resize for safety
-min_width = min(
-    left_half.shape[1],
-    right_half_flipped.shape[1]
-)
-
-left_half = left_half[:, :min_width]
-right_half_flipped = right_half_flipped[:, :min_width]
-
-# Difference map
-difference = cv2.absdiff(
-    left_half,
-    right_half_flipped
-)
-
-# Symmetry Score
-symmetry_score = 100 - (
-    np.sum(difference) /
-    (
-        difference.shape[0] *
-        difference.shape[1] *
-        255
-    )
-) * 100
-
-symmetry_score = round(symmetry_score, 2)
-
-# -----------------------------------
-# STRUCTURAL DENSITY ANALYSIS
-# -----------------------------------
-
+# Blur
 blur = cv2.GaussianBlur(gray, (5, 5), 0)
 
+# Edge Detection
 edges = cv2.Canny(blur, 50, 150)
 
-edge_pixels = np.sum(edges > 0)
+# -------------------------------------------------
+# QUADRANT SPLITTING
+# -------------------------------------------------
 
-total_pixels = edges.shape[0] * edges.shape[1]
+height, width = edges.shape
 
-density_score = (
-    edge_pixels / total_pixels
-) * 100
+mid_h = height // 2
+mid_w = width // 2
 
-density_score = round(density_score, 2)
+quadrants = {
+    "Top Left": edges[0:mid_h, 0:mid_w],
+    "Top Right": edges[0:mid_h, mid_w:width],
+    "Bottom Left": edges[mid_h:height, 0:mid_w],
+    "Bottom Right": edges[mid_h:height, mid_w:width]
+}
 
-# -----------------------------------
-# EFFECTIVENESS SCORE
-# -----------------------------------
+# -------------------------------------------------
+# RISK ANALYSIS
+# -------------------------------------------------
 
-# Weighted scoring
-effectiveness_score = (
-    (symmetry_score * 0.7)
-    +
-    ((100 - density_score) * 0.3)
-)
+risk_scores = {}
 
-effectiveness_score = round(effectiveness_score, 2)
+for name, region in quadrants.items():
+
+    edge_pixels = np.sum(region > 0)
+
+    total_pixels = region.shape[0] * region.shape[1]
+
+    density = (edge_pixels / total_pixels) * 100
+
+    risk_scores[name] = round(density, 2)
+
+# -------------------------------------------------
+# RECOMMENDATIONS
+# -------------------------------------------------
 
 recommendations = []
 
-# Symmetry rules
+for region, score in risk_scores.items():
 
-if symmetry_score < 70:
-    recommendations.append(
-        "Improve design symmetry and visual balance."
-    )
+    if score > 15:
 
-elif symmetry_score > 85:
-    recommendations.append(
-        "Strong symmetry detected."
-    )
+        recommendations.append(
+            f"{region}: High structural complexity detected. Consider reducing clutter."
+        )
 
-# Density rules
+    elif score > 8:
 
-if density_score > 15:
-    recommendations.append(
-        "Design appears crowded. Consider simplifying the structure."
-    )
+        recommendations.append(
+            f"{region}: Moderate complexity. Review spacing and organization."
+        )
 
-elif density_score < 5:
-    recommendations.append(
-        "Design is clean and visually organized."
-    )
+    else:
 
-else:
-    recommendations.append(
-        "Structural complexity is balanced."
-    )
+        recommendations.append(
+            f"{region}: Structure appears balanced."
+        )
 
-# Overall score rules
+# -------------------------------------------------
+# HEATMAP GENERATION
+# -------------------------------------------------
 
-if effectiveness_score < 60:
-    recommendations.append(
-        "High redesign priority recommended."
-    )
+heatmap = np.zeros((height, width), dtype=np.uint8)
 
-elif effectiveness_score < 80:
-    recommendations.append(
-        "Some optimization opportunities exist."
-    )
+for region, score in risk_scores.items():
 
-else:
-    recommendations.append(
-        "Design quality is strong."
-    )
-# -----------------------------------
-# RISK CLASSIFICATION
-# -----------------------------------
+    intensity = min(int(score * 10), 255)
 
-if effectiveness_score >= 85:
-    risk = "Excellent Design"
+    if region == "Top Left":
+        heatmap[0:mid_h, 0:mid_w] = intensity
 
-elif effectiveness_score >= 70:
-    risk = "Good Design"
+    elif region == "Top Right":
+        heatmap[0:mid_h, mid_w:width] = intensity
 
-elif effectiveness_score >= 55:
-    risk = "Moderate Design"
+    elif region == "Bottom Left":
+        heatmap[mid_h:height, 0:mid_w] = intensity
 
-else:
-    risk = "High Risk / Inefficient Design"
+    elif region == "Bottom Right":
+        heatmap[mid_h:height, mid_w:width] = intensity
 
-# -----------------------------------
-# PRINT RESULTS
-# -----------------------------------
-
-print(f"Symmetry Score: {symmetry_score}%")
-
-print(f"Structural Density: {density_score}%")
-
-print(
-    f"Design Effectiveness Score: "
-    f"{effectiveness_score}/100"
-)
-
-print(f"Assessment: {risk}")
-print("\nRecommendations:")
-
-for recommendation in recommendations:
-    print(f"- {recommendation}")
-# -----------------------------------
-# HEATMAP
-# -----------------------------------
-
-heatmap = cv2.applyColorMap(
-    edges,
+heatmap_color = cv2.applyColorMap(
+    heatmap,
     cv2.COLORMAP_JET
 )
 
-heatmap = cv2.cvtColor(
-    heatmap,
+heatmap_color = cv2.cvtColor(
+    heatmap_color,
     cv2.COLOR_BGR2RGB
 )
 
-# -----------------------------------
-# DISPLAY RESULTS
-# -----------------------------------
+# -------------------------------------------------
+# OVERALL SCORE
+# -------------------------------------------------
+
+average_risk = np.mean(list(risk_scores.values()))
+
+effectiveness_score = round(
+    100 - average_risk * 3,
+    2
+)
+
+if effectiveness_score > 85:
+    assessment = "Excellent Design"
+
+elif effectiveness_score > 70:
+    assessment = "Good Design"
+
+elif effectiveness_score > 55:
+    assessment = "Moderate Design"
+
+else:
+    assessment = "High Risk Design"
+
+# -------------------------------------------------
+# REPORT
+# -------------------------------------------------
+
+print("\n========== DESIGNSURE REPORT ==========\n")
+
+for region, score in risk_scores.items():
+    print(f"{region}: {score}%")
+
+print("\nEffectiveness Score:", effectiveness_score)
+print("Assessment:", assessment)
+
+print("\nRecommendations:\n")
+
+for rec in recommendations:
+    print("-", rec)
+
+# -------------------------------------------------
+# DISPLAY
+# -------------------------------------------------
 
 titles = [
-    "Original",
-    "Difference Map",
-    "Structural Heatmap"
+    "Original Design",
+    "Edge Detection",
+    "Risk Heatmap"
 ]
 
 images = [
     image_rgb,
-    difference,
-    heatmap
+    edges,
+    heatmap_color
 ]
 
-plt.figure(figsize=(14, 6))
+plt.figure(figsize=(15, 5))
 
 for i in range(len(images)):
 
@@ -204,12 +174,10 @@ for i in range(len(images)):
 
     plt.title(titles[i])
 
-    plt.axis('off')
+    plt.axis("off")
 
 plt.suptitle(
-    f"Effectiveness Score: "
-    f"{effectiveness_score}/100\n"
-    f"{risk}",
+    f"DesignSure Analysis\nScore: {effectiveness_score} | {assessment}",
     fontsize=14
 )
 
