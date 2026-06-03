@@ -6,7 +6,7 @@ from reports.modules.report_generator import generate_report
 
 # Load image
 image = cv2.imread(
-    r"C:\Users\vaibh\OneDrive\Desktop\DesignSure\images\3d-bedroom-designs.jpg"
+    r"C:\Users\vaibh\OneDrive\Desktop\DesignSure\images\floor plan image.png"
 )
 
 image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)

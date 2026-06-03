@@ -2,16 +2,16 @@ DESIGNSURE ANALYSIS REPORT
 ========================================
 
 Image: 3d-bedroom-designs
-Generated: 2026-06-03 17:16:52.137159
+Generated: 2026-06-03 17:45:35.184630
 
-Effectiveness Score: 86.14/100
+Effectiveness Score: 89.95/100
 Assessment: Excellent Design
 
 Risk Zones:
-Top Left: 3.19%
-Top Right: 4.91%
-Bottom Left: 3.97%
-Bottom Right: 6.41%
+Top Left: 5.33%
+Top Right: 2.56%
+Bottom Left: 2.1%
+Bottom Right: 3.41%
 
 Recommendations:
 - Top Left: Structure appears balanced.
