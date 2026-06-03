@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from reports.modules.report_generator import generate_report
+
 
 # Load image
 image = cv2.imread(
@@ -179,6 +181,13 @@ for i in range(len(images)):
 plt.suptitle(
     f"DesignSure Analysis\nScore: {effectiveness_score} | {assessment}",
     fontsize=14
+)
+generate_report(
+    image_name="3d-bedroom-designs",
+    effectiveness_score=effectiveness_score,
+    assessment=assessment,
+    recommendations=recommendations,
+    risk_scores=risk_scores
 )
 
 plt.tight_layout()
