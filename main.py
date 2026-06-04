@@ -15,7 +15,7 @@ image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 # Blur
-blur = cv2.GaussianBlur(gray, (5, 5), 0)
+blur = cv2.GaussianBlur(gray, (5, 5), 1)
 
 # Edge Detection
 edges = cv2.Canny(blur, 50, 150)
